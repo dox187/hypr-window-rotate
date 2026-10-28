@@ -28,6 +28,16 @@ The plugin hooks some Hyprland internals, so a new Hyprland release may need a p
 
 ## Installation
 
+### Prebuilt packages
+
+The [latest release](https://github.com/dox187/hypr-window-rotate/releases/latest) has packages for Fedora 44 (copr `lionheartp/Hyprland`), Arch Linux, Debian sid/forky and Ubuntu 26.10. Each package fits only the exact `hyprland` package listed in the release notes, and the package manager will refuse it otherwise. If your Hyprland is different, build the package yourself as shown below.
+
+```sh
+sudo dnf install ./hypr-window-rotate-0.1.0-1.fc44.x86_64.rpm            # Fedora
+sudo pacman -U hypr-window-rotate-0.1.0-1-x86_64.pkg.tar.zst             # Arch
+sudo apt install ./hypr-window-rotate_0.1.0_ubuntu-26.10_amd64.deb       # Ubuntu (or the debian-sid file)
+```
+
 ### Arch Linux
 
 ```sh
