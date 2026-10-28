@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# plugins are ABI-locked to the Hyprland build they were compiled against
+HYPRLAND_VERSION := $(shell dpkg-query -W -f='$${Version}' hyprland-dev)
+PKG_VERSION      := $(shell dpkg-parsechangelog -S Version)
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	dh_auto_build -- VERSION=$(PKG_VERSION)
+
+override_dh_auto_install:
+	dh_auto_install -- PLUGINDIR=/usr/lib/hyprland/plugins
+
+override_dh_gencontrol:
+	dh_gencontrol -- -Vhyprland:Version=$(HYPRLAND_VERSION)

@@ -1,0 +1,33 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # catches distro Hyprland updates that break the build or the hook targets
+    - cron: "0 6 * * 1"
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Arch Linux
+            image: archlinux:latest
+            deps: pacman -Syu --noconfirm --needed base-devel hyprland lua pixman libdrm pkgconf
+          - name: Debian sid
+            image: debian:sid
+            deps: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential hyprland hyprland-dev liblua5.4-dev libpixman-1-dev libdrm-dev pkgconf
+    steps:
+      - name: Install dependencies
+        run: ${{ matrix.deps }}
+      - uses: actions/checkout@v4
+      - name: Build
+        run: make
+      - name: Check hook targets
+        run: make check

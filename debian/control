@@ -1,0 +1,22 @@
+Source: hypr-window-rotate
+Section: x11
+Priority: optional
+Maintainer: dox187 <1054544+dox187@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13),
+               pkgconf,
+               hyprland-dev,
+               liblua5.4-dev,
+               libpixman-1-dev,
+               libdrm-dev
+Standards-Version: 4.7.2
+Homepage: https://github.com/dox187/hypr-window-rotate
+Rules-Requires-Root: no
+
+Package: hypr-window-rotate
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, hyprland (= ${hyprland:Version})
+Description: Hyprland plugin to rotate individual windows in 90 degree steps
+ hypr-window-rotate rotates single windows of the Hyprland compositor in
+ 90 degree steps. The window keeps its place in the layout; the application
+ is configured with the swapped size, drawn rotated, and pointer input is
+ mapped back, so a rotated window stays fully usable.

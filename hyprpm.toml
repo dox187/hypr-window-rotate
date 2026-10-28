@@ -1,0 +1,10 @@
+[repository]
+name = "hypr-window-rotate"
+authors = ["dox187"]
+commit_pins = []
+
+[hypr-window-rotate]
+description = "Rotate individual windows in 90 degree steps"
+authors = ["dox187"]
+output = "hypr-window-rotate.so"
+build = ["make all"]
