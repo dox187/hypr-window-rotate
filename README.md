@@ -15,11 +15,16 @@ Hyprland can only rotate a whole monitor. This plugin rotates a single window:
 
 Hyprland plugins are locked to the exact Hyprland build they were compiled against. Hyprland refuses to load a mismatched plugin. Rebuild the plugin after every Hyprland update, and the packages below do this for you.
 
-| Hyprland | Status |
-| --- | --- |
-| 0.56.2 | Tested on Fedora 44 (copr `lionheartp/Hyprland`). Package builds verified on Arch Linux (`extra`) and Debian sid. |
+| Distribution | Hyprland | Status |
+| --- | --- | --- |
+| Fedora 44 (copr `lionheartp/Hyprland`) | 0.56.2 | Tested at runtime, RPM builds |
+| Arch Linux (`extra`) | 0.56.2 | Package builds and installs, all hook targets present |
+| Debian sid / forky | 0.56.2 | Package builds and installs, all hook targets present |
+| Ubuntu 26.10 | 0.56.2 | Package builds and installs, all hook targets present |
+| Debian 13 trixie (backports) | 0.55.2 | Not supported yet: older Hyprland internals |
+| Ubuntu 26.04 LTS | 0.53.3 | Not supported yet: older Hyprland internals, no Lua config |
 
-The plugin hooks some Hyprland internals, so a new Hyprland release may need a plugin update. `make check` tells you whether your Hyprland build still exports every function the plugin hooks. CI runs a build and this check weekly against Arch Linux and Debian sid.
+The plugin hooks some Hyprland internals, so a new Hyprland release may need a plugin update. `make check` tells you whether your Hyprland build still exports every function the plugin hooks. CI runs a build and this check weekly against Arch Linux, Debian sid and the newest Ubuntu.
 
 ## Installation
 
@@ -52,7 +57,7 @@ The plugin is installed to `/usr/lib64/hyprland/hypr-window-rotate.so`.
 
 ### Debian / Ubuntu (deb)
 
-This needs a distribution with Hyprland 0.56 (`hyprland-dev`), currently Debian sid/forky and the newest Ubuntu.
+This works on Debian sid/forky and Ubuntu 26.10, which ship Hyprland 0.56 (`hyprland-dev`).
 
 ```sh
 sudo apt install build-essential debhelper hyprland-dev liblua5.4-dev libpixman-1-dev libdrm-dev pkgconf
@@ -63,10 +68,6 @@ sudo apt install ../hypr-window-rotate_0.1.0_*.deb
 ```
 
 The plugin is installed to `/usr/lib/hyprland/plugins/hypr-window-rotate.so`.
-
-### Prebuilt packages
-
-The [releases](https://github.com/dox187/hypr-window-rotate/releases) carry RPM, Arch and Debian packages. Each one fits only the exact Hyprland build named in the release notes. If your Hyprland is different, build the package yourself as shown above.
 
 ### hyprpm
 

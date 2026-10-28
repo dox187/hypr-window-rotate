@@ -10,7 +10,7 @@ license=('BSD-3-Clause')
 depends=('hyprland')
 makedepends=('gcc' 'make' 'pkgconf' 'lua' 'pixman' 'libdrm')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('fd8b295eb4ffbc29f3039b038dfb3f2e1be1d3006f1df9d1e018317ca0f6fd64')
 
 build() {
     cd "$pkgname-$pkgver"

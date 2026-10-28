@@ -1,7 +1,10 @@
 [repository]
 name = "hypr-window-rotate"
 authors = ["dox187"]
-commit_pins = []
+# [Hyprland commit, plugin commit]
+commit_pins = [
+    ["efb50993780079460b0cbed1363e2166a2de1d9f", "2f7a2dd4d28bf6fcdb53c95716d92e1d40e045e5"], # Hyprland 0.56.2 -> v0.1.0
+]
 
 [hypr-window-rotate]
 description = "Rotate individual windows in 90 degree steps"

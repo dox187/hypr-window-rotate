@@ -23,10 +23,13 @@ jobs:
           - name: Debian sid
             image: debian:sid
             deps: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential hyprland hyprland-dev liblua5.4-dev libpixman-1-dev libdrm-dev pkgconf
+          - name: Ubuntu (newest release)
+            image: ubuntu:rolling
+            deps: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential hyprland hyprland-dev liblua5.4-dev libpixman-1-dev libdrm-dev pkgconf
     steps:
       - name: Install dependencies
         run: ${{ matrix.deps }}
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build
         run: make
       - name: Check hook targets
