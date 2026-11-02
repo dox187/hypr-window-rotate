@@ -3,7 +3,7 @@
 %global hyprland_vr %(rpm -q --qf '%%{VERSION}-%%{RELEASE}' hyprland-devel >/dev/null 2>&1 && rpm -q --qf '%%{VERSION}-%%{RELEASE}' hyprland-devel || echo 0)
 
 Name:           hypr-window-rotate
-Version:        0.1.0
+Version:        0.57.0+1
 Release:        1%{?dist}
 Summary:        Hyprland plugin to rotate individual windows in 90 degree steps
 
@@ -42,5 +42,9 @@ back, so a rotated window stays fully usable.
 %{_libdir}/hyprland/hypr-window-rotate.so
 
 %changelog
+* Mon Nov 02 2026 dox187 <1054544+dox187@users.noreply.github.com> - 0.57.0+1-1
+- Port to Hyprland 0.57.0, version scheme <Hyprland version>+<release>
+- Drop the window_rotate dispatcher: Hyprland 0.57 removed hyprlang configs
+
 * Wed Oct 28 2026 dox187 <1054544+dox187@users.noreply.github.com> - 0.1.0-1
 - Initial package

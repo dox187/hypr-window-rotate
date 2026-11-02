@@ -1,3 +1,12 @@
+hypr-window-rotate (0.57.0+1) unstable; urgency=medium
+
+  * Port to Hyprland 0.57.0. The version is now the targeted Hyprland
+    version plus a +N plugin release counter.
+  * Drop the window_rotate dispatcher: Hyprland 0.57 removed hyprlang
+    configs, the Lua function hl.plugin.window_rotate.rotate remains.
+
+ -- dox187 <1054544+dox187@users.noreply.github.com>  Mon, 02 Nov 2026 12:00:00 +0100
+
 hypr-window-rotate (0.1.0) unstable; urgency=medium
 
   * Initial release.

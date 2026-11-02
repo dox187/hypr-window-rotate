@@ -1,7 +1,7 @@
 # Maintainer: dox187 <1054544+dox187@users.noreply.github.com>
 
 pkgname=hypr-window-rotate
-pkgver=0.1.0
+pkgver=0.57.0+1
 pkgrel=1
 pkgdesc="Hyprland plugin to rotate individual windows in 90 degree steps"
 arch=('x86_64' 'aarch64')
@@ -10,7 +10,7 @@ license=('BSD-3-Clause')
 depends=('hyprland')
 makedepends=('gcc' 'make' 'pkgconf' 'lua' 'pixman' 'libdrm')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=('fd8b295eb4ffbc29f3039b038dfb3f2e1be1d3006f1df9d1e018317ca0f6fd64')
+sha256sums=('SKIP')
 
 build() {
     cd "$pkgname-$pkgver"

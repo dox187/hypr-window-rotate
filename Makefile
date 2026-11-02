@@ -1,4 +1,4 @@
-VERSION   ?= 0.1.0
+VERSION   ?= 0.57.0+1
 
 CXX       ?= g++
 CXXFLAGS  ?= -O2 -g

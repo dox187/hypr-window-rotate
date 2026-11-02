@@ -4,7 +4,7 @@
 set -eu
 
 BIN="${1:-$(command -v Hyprland)}"
-SYMBOLS='Desktop::View::CWindow::realToReportSize(
+SYMBOLS='Layout::CWindowTarget::sendWindowSize(
 CSurfacePassElement::getTexBox(
 Render::IElementRenderer::drawSurface(
 Render::IElementRenderer::calculateUVForSurface(

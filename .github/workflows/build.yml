@@ -30,7 +30,27 @@ jobs:
       - name: Install dependencies
         run: ${{ matrix.deps }}
       - uses: actions/checkout@v7
+      # The plugin version is <Hyprland version>+<release>, and a build only fits that exact Hyprland.
+      # An older distro Hyprland is skipped, a newer one fails: it means a new plugin release is due.
+      - name: Compare Hyprland versions
+        id: hyprland
+        run: |
+          plugin="$(sed -n 's/^VERSION *?= *//p' Makefile)"
+          target="${plugin%%+*}"
+          distro="$(pkg-config --modversion hyprland)"
+          echo "plugin $plugin targets Hyprland $target, the distro ships $distro"
+          if [ "$distro" = "$target" ]; then
+              echo "build=true" >> "$GITHUB_OUTPUT"
+          elif [ "$(printf '%s\n%s\n' "$distro" "$target" | sort -V | head -n1)" = "$distro" ]; then
+              echo "::notice::Hyprland $distro is older than $target, skipping the build"
+              echo "build=false" >> "$GITHUB_OUTPUT"
+          else
+              echo "::error::Hyprland $distro is newer than $target: port the plugin and release $distro+1"
+              exit 1
+          fi
       - name: Build
+        if: steps.hyprland.outputs.build == 'true'
         run: make
       - name: Check hook targets
+        if: steps.hyprland.outputs.build == 'true'
         run: make check

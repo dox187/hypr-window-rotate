@@ -9,33 +9,40 @@ Hyprland can only rotate a whole monitor. This plugin rotates a single window:
 - The window keeps its tile, so the layout, borders, shadows, rounding and blur stay as they are.
 - At 90° and 270° the application is configured with the swapped size, so a portrait tile gets landscape content and the other way around. The content fills the tile and is not scaled.
 - Pointer input is mapped back, so you can click, select and scroll in a rotated window as usual.
-- Works with Wayland and XWayland clients, on normal and rotated monitors, and with both Lua (`hyprland.lua`) and hyprlang (`hyprland.conf`) configs.
+- Works with Wayland and XWayland clients, on normal and rotated monitors.
+
+## Versioning
+
+The plugin version is the Hyprland version it is built for, followed by `+` and a release counter that starts at 1 for every Hyprland version. `0.57.0+1` is the first release for Hyprland 0.57.0, a fix for the same Hyprland would be `0.57.0+2`, and the first release for Hyprland 0.57.1 would be `0.57.1+1`.
+
+The older `0.1.0` release is the one for Hyprland 0.56.2.
 
 ## Compatibility
 
 Hyprland plugins are locked to the exact Hyprland build they were compiled against. Hyprland refuses to load a mismatched plugin. Rebuild the plugin after every Hyprland update, and the packages below do this for you.
 
-| Distribution | Hyprland | Status |
-| --- | --- | --- |
-| Fedora 44 (copr `lionheartp/Hyprland`) | 0.56.2 | Tested at runtime, RPM builds |
-| Arch Linux (`extra`) | 0.56.2 | Package builds and installs, all hook targets present |
-| Debian sid / forky | 0.56.2 | Package builds and installs, all hook targets present |
-| Ubuntu 26.10 | 0.56.2 | Package builds and installs, all hook targets present |
-| Debian 13 trixie (backports) | 0.55.2 | Not supported yet: older Hyprland internals |
-| Ubuntu 26.04 LTS | 0.53.3 | Not supported yet: older Hyprland internals, no Lua config |
+| Distribution | Hyprland | Plugin release | Status |
+| --- | --- | --- | --- |
+| Fedora 44 (copr `lionheartp/Hyprland`) | 0.57.0 | 0.57.0+1 | Tested at runtime, RPM builds |
+| Arch Linux (`extra`) | 0.57.0 | 0.57.0+1 | Package builds and installs, all hook targets present |
+| Debian sid | 0.57.0 | 0.57.0+1 | Package builds and installs, all hook targets present |
+| Debian forky | 0.56.2 | 0.1.0 | See the [0.1.0 release](https://github.com/dox187/hypr-window-rotate/releases/tag/v0.1.0) |
+| Ubuntu 26.10 | 0.56.2 | 0.1.0 | See the [0.1.0 release](https://github.com/dox187/hypr-window-rotate/releases/tag/v0.1.0) |
+| Debian 13 trixie (backports) | 0.55.2 | none | Not supported: older Hyprland internals |
+| Ubuntu 26.04 LTS | 0.53.3 | none | Not supported: older Hyprland internals, no Lua config |
 
-The plugin hooks some Hyprland internals, so a new Hyprland release may need a plugin update. `make check` tells you whether your Hyprland build still exports every function the plugin hooks. CI runs a build and this check weekly against Arch Linux, Debian sid and the newest Ubuntu.
+The plugin hooks some Hyprland internals, so a new Hyprland release usually needs a plugin update. `make check` tells you whether your Hyprland build still exports every function the plugin hooks. CI builds the plugin and runs this check weekly on Arch Linux, Debian sid and the newest Ubuntu: it skips a distribution whose Hyprland is older than the one the plugin targets, and fails when a distribution has moved to a newer Hyprland.
 
 ## Installation
 
 ### Prebuilt packages
 
-The [latest release](https://github.com/dox187/hypr-window-rotate/releases/latest) has packages for Fedora 44 (copr `lionheartp/Hyprland`), Arch Linux, Debian sid/forky and Ubuntu 26.10. Each package fits only the exact `hyprland` package listed in the release notes, and the package manager will refuse it otherwise. If your Hyprland is different, build the package yourself as shown below.
+The [latest release](https://github.com/dox187/hypr-window-rotate/releases/latest) has packages for Fedora 44 (copr `lionheartp/Hyprland`), Arch Linux and Debian sid. Each package fits only the exact `hyprland` package listed in the release notes, and the package manager will refuse it otherwise. If your Hyprland is different, build the package yourself as shown below.
 
 ```sh
-sudo dnf install ./hypr-window-rotate-0.1.0-1.fc44.x86_64.rpm            # Fedora
-sudo pacman -U hypr-window-rotate-0.1.0-1-x86_64.pkg.tar.zst             # Arch
-sudo apt install ./hypr-window-rotate_0.1.0_ubuntu-26.10_amd64.deb       # Ubuntu (or the debian-sid file)
+sudo dnf install ./hypr-window-rotate-0.57.0+1-1.fc44.x86_64.rpm         # Fedora
+sudo pacman -U hypr-window-rotate-0.57.0+1-1-x86_64.pkg.tar.zst          # Arch
+sudo apt install ./hypr-window-rotate_0.57.0+1_debian-sid_amd64.deb      # Debian sid
 ```
 
 ### Arch Linux
@@ -57,24 +64,24 @@ sudo dnf install rpm-build gcc-c++ make hyprland-devel lua-devel
 git clone https://github.com/dox187/hypr-window-rotate
 cd hypr-window-rotate
 mkdir -p ~/rpmbuild/SOURCES
-curl -L -o ~/rpmbuild/SOURCES/hypr-window-rotate-0.1.0.tar.gz \
-    https://github.com/dox187/hypr-window-rotate/archive/v0.1.0/hypr-window-rotate-0.1.0.tar.gz
+curl -L -o ~/rpmbuild/SOURCES/hypr-window-rotate-0.57.0+1.tar.gz \
+    https://github.com/dox187/hypr-window-rotate/archive/v0.57.0+1/hypr-window-rotate-0.57.0+1.tar.gz
 rpmbuild -bb packaging/rpm/hypr-window-rotate.spec
-sudo dnf install ~/rpmbuild/RPMS/x86_64/hypr-window-rotate-0.1.0-1.*.rpm
+sudo dnf install ~/rpmbuild/RPMS/x86_64/hypr-window-rotate-0.57.0+1-1.*.rpm
 ```
 
 The plugin is installed to `/usr/lib64/hyprland/hypr-window-rotate.so`.
 
 ### Debian / Ubuntu (deb)
 
-This works on Debian sid/forky and Ubuntu 26.10, which ship Hyprland 0.56 (`hyprland-dev`).
+This works on Debian sid, which ships Hyprland 0.57.0 (`hyprland-dev`). For Hyprland 0.56.2 (Debian forky, Ubuntu 26.10) check out the `v0.1.0` tag first.
 
 ```sh
 sudo apt install build-essential debhelper hyprland-dev liblua5.4-dev libpixman-1-dev libdrm-dev pkgconf
 git clone https://github.com/dox187/hypr-window-rotate
 cd hypr-window-rotate
 dpkg-buildpackage -b -us -uc
-sudo apt install ../hypr-window-rotate_0.1.0_*.deb
+sudo apt install ../hypr-window-rotate_0.57.0+1_*.deb
 ```
 
 The plugin is installed to `/usr/lib/hyprland/plugins/hypr-window-rotate.so`.
@@ -101,7 +108,7 @@ make install PREFIX=~/.local    # ~/.local/lib/hyprland/plugins/hypr-window-rota
 
 ## Configuration
 
-### Lua config (`hyprland.lua`)
+Hyprland 0.57 only reads Lua configs (`hyprland.lua`), so the plugin is driven from Lua as well.
 
 ```lua
 hl.plugin.load("/usr/lib/hyprland/plugins/hypr-window-rotate.so")
@@ -116,18 +123,7 @@ hl.bind(mods .. " + left",  function() hl.plugin.window_rotate.rotate(270) end)
 
 From a shell: `hyprctl eval "hl.plugin.window_rotate.rotate(90)"`.
 
-### hyprlang config (`hyprland.conf`)
-
-```ini
-plugin = /usr/lib/hyprland/plugins/hypr-window-rotate.so
-
-bind = SUPER SHIFT CTRL ALT, up,    window_rotate, 0
-bind = SUPER SHIFT CTRL ALT, right, window_rotate, 90
-bind = SUPER SHIFT CTRL ALT, down,  window_rotate, 180
-bind = SUPER SHIFT CTRL ALT, left,  window_rotate, 270
-```
-
-From a shell: `hyprctl dispatch window_rotate 90`.
+The `window_rotate` dispatcher of the 0.1.0 release for `hyprland.conf` is gone: Hyprland 0.57 removed hyprlang configs and plugin dispatchers.
 
 On Fedora the plugin path is `/usr/lib64/hyprland/hypr-window-rotate.so`.
 
@@ -146,8 +142,8 @@ Every command acts on the active window.
 
 The plugin hooks eight Hyprland functions. Hyprland already has the pieces needed to draw a buffer rotated (`wl_surface.set_buffer_transform`); the plugin uses them for whole windows:
 
-- **Size:** `CWindow::realToReportSize` reports the swapped size to the client for 90° and 270°.
-- **Rendering:** `CSurfacePassElement::getTexBox` rotates the placement of the main surface and its subsurfaces around the window center. `IElementRenderer::drawSurface` adds the rotation to the texture transform while the surface is drawn. `IElementRenderer::calculateUVForSurface` fits the UVs in the unrotated frame.
+- **Size:** `CWindowTarget::sendWindowSize` configures the client with the swapped size for 90° and 270°.
+- **Rendering:** `CSurfacePassElement::getTexBox` rotates the placement of the main surface and its subsurfaces around the window center. `IElementRenderer::drawSurface` adds the rotation to the surface's buffer transform while the surface is drawn. `IElementRenderer::calculateUVForSurface` fits the UVs in the unrotated frame.
 - **Input:** `CViewHitTester::windowSurfaceAt` looks up the surface under the unrotated point. `CSeatManager::setPointerFocus` and `CSeatManager::sendPointerMotion` rotate the coordinates sent to the client.
 - **Damage:** `IHyprRenderer::damageSurface` repaints the whole window, because partial damage would land on the wrong spot once rotated.
 
@@ -159,6 +155,23 @@ When no window is rotated, every hook returns straight to the original function.
 - Only the pointer is remapped. Touch and tablet input are not.
 - A rotated window is repainted as a whole on every update.
 - The rotation is not persistent: it is gone when the window closes or Hyprland restarts.
+
+## Changelog
+
+### 0.57.0+1 (2026-11-02), for Hyprland 0.57.0
+
+- Ported to Hyprland 0.57.0. This release does not load into Hyprland 0.56.x, and 0.1.0 does not load into 0.57.0.
+- New version scheme: the Hyprland version the plugin is built for, plus `+` and a release counter that starts at 1 for every Hyprland version.
+- Removed the `window_rotate` dispatcher and the `hyprland.conf` example, because Hyprland 0.57 removed hyprlang configs and plugin dispatchers. The Lua function `hl.plugin.window_rotate.rotate` is unchanged.
+- The size swap hooks `CWindowTarget::sendWindowSize`, because Hyprland 0.57 moved window configuration into window backends and removed `CWindow::realToReportSize`.
+- Rotation is composed with the inverse of the surface's buffer transform, which is how Hyprland 0.57 draws it, so windows still turn in the stated direction.
+- CI builds only where the distribution ships the targeted Hyprland version. It skips older ones and fails when a distribution moves to a newer Hyprland.
+
+### 0.1.0 (2026-10-28), for Hyprland 0.56.2
+
+- First release: rotate individual windows in 90° steps. The window keeps its tile, the application gets the swapped size at 90° and 270°, is drawn rotated, and pointer input is mapped back.
+- Lua config: `hl.plugin.window_rotate.rotate(90)`. hyprlang config: `window_rotate, 90` dispatcher.
+- Packaging for Fedora (RPM spec), Arch Linux (PKGBUILD) and Debian/Ubuntu (`debian/`), plus `hyprpm.toml`.
 
 ## License
 

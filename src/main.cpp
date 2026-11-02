@@ -5,7 +5,7 @@
 //
 // The window keeps its layout box (tile), so borders, shadows, hit-testing and the layout stay untouched.
 // Only the client side is rotated, the same way a buffer transform works:
-//  - Size: for 90/270 the client is configured with the swapped size (CWindow::realToReportSize hook).
+//  - Size: for 90/270 the client is configured with the swapped size (CWindowTarget::sendWindowSize hook).
 //  - Rendering: the window's surfaces (main surface + subsurfaces) get their boxes rotated around the window
 //    center (CSurfacePassElement::getTexBox hook), and their texture is drawn with an extra transform
 //    (IElementRenderer::drawSurface hook). UV fitting is computed in the unrotated frame
@@ -17,10 +17,11 @@
 // Popups (menus, tooltips) are not rotated; they keep their normal position and input.
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
-#include <hyprland/src/desktop/view/Window.hpp>
+#include <hyprland/src/desktop/view/window/Window.hpp>
 #include <hyprland/src/desktop/view/WLSurface.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/desktop/state/ViewHitTester.hpp>
+#include <hyprland/src/layout/target/WindowTarget.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/protocols/core/Compositor.hpp>
@@ -30,7 +31,6 @@
 #include <hyprland/src/render/Texture.hpp>
 #include <hyprland/src/render/pass/SurfacePassElement.hpp>
 #include <hyprland/src/helpers/math/Math.hpp>
-#include <hyprland/src/config/ConfigManager.hpp>
 
 extern "C" {
 #include <lua.h>
@@ -62,7 +62,7 @@ static std::vector<SRotation> g_rotations;
 // quarters of the surface currently drawn by hkDrawSurface, read by hkCalculateUV
 static int            g_drawingQuarters = 0;
 
-static CFunctionHook* g_reportSizeHook        = nullptr;
+static CFunctionHook* g_sendWindowSizeHook    = nullptr;
 static CFunctionHook* g_getTexBoxHook         = nullptr;
 static CFunctionHook* g_drawSurfaceHook       = nullptr;
 static CFunctionHook* g_calculateUVHook       = nullptr;
@@ -149,7 +149,7 @@ static PHLWINDOW windowForSurface(const SP<CWLSurfaceResource>& surf) {
 
     for (const auto& r : g_rotations) {
         const auto w = r.window.lock();
-        if (w && w->m_isMapped && inMainTree(w, surf))
+        if (w && w->mapped() && inMainTree(w, surf))
             return w;
     }
 
@@ -173,10 +173,21 @@ static Vector2D localDelta(const PHLWINDOW& w, const Vector2D& pos, int q) {
 // ---------------------------------------------------------------------------------------------------------------------
 // hooks: size + rendering
 
-typedef Vector2D (*origRealToReportSize)(CWindow*);
-static Vector2D hkRealToReportSize(CWindow* thisptr) {
-    const Vector2D SIZE = ((origRealToReportSize)g_reportSizeHook->m_original)(thisptr);
-    return quartersFor(thisptr) % 2 == 1 ? Vector2D{SIZE.y, SIZE.x} : SIZE;
+// Same as the original (configure the client with the window's goal box), with width and height swapped.
+// Only this path is changed: X11 configure requests and the initial size prediction also call
+// IWindowBackend::configure, but they carry the client's own geometry and must stay untouched.
+typedef void (*origSendWindowSize)(Layout::CWindowTarget*, bool);
+static void hkSendWindowSize(Layout::CWindowTarget* thisptr, bool force) {
+    const auto ORIG = (origSendWindowSize)g_sendWindowSizeHook->m_original;
+    const auto W    = g_rotations.empty() ? nullptr : thisptr->window();
+
+    if (!W || quartersFor(W.get()) % 2 == 0) {
+        ORIG(thisptr, force);
+        return;
+    }
+
+    const Vector2D SIZE = W->size(IGeometric::GEOMETRIC_GOAL);
+    W->backend().configure(CBox{W->position(IGeometric::GEOMETRIC_GOAL), Vector2D{SIZE.y, SIZE.x}}, W->m_monitor.lock(), force);
 }
 
 static int quartersForElement(const CSurfacePassElement* el) {
@@ -206,40 +217,42 @@ static CBox hkGetTexBox(CSurfacePassElement* thisptr) {
     return rotateBoxAround(box, CENTER, Q);
 }
 
-typedef void (*origDrawSurface)(void*, WP<CSurfacePassElement>, const CRegion&);
-static void hkDrawSurface(void* thisptr, WP<CSurfacePassElement> element, const CRegion& damage) {
+typedef void (*origDrawSurface)(void*, Render::CRenderContext&, WP<CSurfacePassElement>, const CRegion&);
+static void hkDrawSurface(void* thisptr, Render::CRenderContext& ctx, WP<CSurfacePassElement> element, const CRegion& damage) {
     const auto ORIG = (origDrawSurface)g_drawSurfaceHook->m_original;
     // pass elements are unique pointers: their weak refs cannot be locked, only dereferenced
     auto*      EL = element ? element.get() : nullptr;
     const int  Q  = (EL && !g_rotations.empty()) ? quartersForElement(EL) : 0;
 
     if (Q == 0 || !EL->m_data.texture) {
-        ORIG(thisptr, element, damage);
+        ORIG(thisptr, ctx, element, damage);
         return;
     }
 
     const auto TEX = EL->m_data.texture;
     const auto OLD = TEX->m_transform;
 
-    TEX->m_transform  = Math::composeTransform(rotationTransform(Q), OLD);
+    // m_transform holds the surface's buffer transform and the renderer applies its inverse
+    // (wl_surface.set_buffer_transform semantics), so compose the rotation onto that inverse and invert back
+    TEX->m_transform  = Math::invertTransform(Math::composeTransform(rotationTransform(Q), Math::invertTransform(OLD)));
     g_drawingQuarters = Q;
 
-    ORIG(thisptr, element, damage);
+    ORIG(thisptr, ctx, element, damage);
 
     g_drawingQuarters = 0;
     TEX->m_transform  = OLD;
 }
 
-typedef void (*origCalculateUV)(void*, PHLWINDOW, SP<CWLSurfaceResource>, PHLMONITOR, bool, const Vector2D&, const Vector2D&, bool);
-static void hkCalculateUV(void* thisptr, PHLWINDOW window, SP<CWLSurfaceResource> surface, PHLMONITOR monitor, bool main, const Vector2D& projSize,
-                          const Vector2D& projSizeUnscaled, bool fixMisalignedFSV1) {
+typedef void (*origCalculateUV)(void*, Render::CRenderContext&, PHLWINDOW, SP<CWLSurfaceResource>, PHLMONITOR, bool, const Vector2D&, const Vector2D&, bool);
+static void hkCalculateUV(void* thisptr, Render::CRenderContext& ctx, PHLWINDOW window, SP<CWLSurfaceResource> surface, PHLMONITOR monitor, bool main,
+                          const Vector2D& projSize, const Vector2D& projSizeUnscaled, bool fixMisalignedFSV1) {
     const auto ORIG = (origCalculateUV)g_calculateUVHook->m_original;
 
     // the projection box is rotated, the buffer is not: fit UVs in the unrotated frame
     if (g_drawingQuarters % 2 == 1)
-        ORIG(thisptr, window, surface, monitor, main, Vector2D{projSize.y, projSize.x}, Vector2D{projSizeUnscaled.y, projSizeUnscaled.x}, fixMisalignedFSV1);
+        ORIG(thisptr, ctx, window, surface, monitor, main, Vector2D{projSize.y, projSize.x}, Vector2D{projSizeUnscaled.y, projSizeUnscaled.x}, fixMisalignedFSV1);
     else
-        ORIG(thisptr, window, surface, monitor, main, projSize, projSizeUnscaled, fixMisalignedFSV1);
+        ORIG(thisptr, ctx, window, surface, monitor, main, projSize, projSizeUnscaled, fixMisalignedFSV1);
 }
 
 typedef void (*origDamageSurface)(void*, SP<CWLSurfaceResource>, double, double, double);
@@ -286,11 +299,9 @@ static Vector2D remapLocal(const SP<CWLSurfaceResource>& surf, const Vector2D& l
     if (!w)
         return local;
 
-    Vector2D delta = localDelta(w, g_pInputManager->getMouseCoordsInternal(), quartersFor(w.get()));
-    if (w->m_isX11)
-        delta = delta * w->m_X11SurfaceScaledBy;
-
-    return local + delta;
+    // the input manager hands X11 clients buffer-scaled coordinates, so scale the delta the same way
+    const Vector2D DELTA = localDelta(w, g_pInputManager->getMouseCoordsInternal(), quartersFor(w.get()));
+    return local + w->backend().surfaceLocalToBuffer(DELTA);
 }
 
 typedef void (*origSetPointerFocus)(void*, SP<CWLSurfaceResource>, const Vector2D&);
@@ -324,7 +335,7 @@ static void setRotation(const PHLWINDOW& w, int quarters) {
     g_pHyprRenderer->damageWindow(w);
 }
 
-// Rotation command on the active window, shared by the Lua function and the dispatcher.
+// Rotation command on the active window.
 //   integer (degrees, multiple of 90): absolute clockwise angle, e.g. 0, 90, 180, 270, -90
 //   "cw" (default), "ccw", "flip": relative quarter turns; "reset": back to 0
 // Returns an error message on bad input.
@@ -377,13 +388,6 @@ static int luaRotate(lua_State* L) {
     return failed ? lua_error(L) : 0;
 }
 
-// window_rotate dispatcher, for hyprlang (hyprland.conf) configs
-static SDispatchResult dispatchRotate(std::string arg) {
-    if (const auto ERR = runCommand(arg); ERR)
-        return {.success = false, .error = *ERR};
-    return {};
-}
-
 // ---------------------------------------------------------------------------------------------------------------------
 // plugin entry points
 
@@ -415,7 +419,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         throw std::runtime_error("[hypr-window-rotate] version mismatch");
     }
 
-    g_reportSizeHook        = hookByName("realToReportSize", "Desktop::View::CWindow::realToReportSize(", (void*)&hkRealToReportSize);
+    g_sendWindowSizeHook    = hookByName("sendWindowSize", "Layout::CWindowTarget::sendWindowSize(", (void*)&hkSendWindowSize);
     g_getTexBoxHook         = hookByName("getTexBox", "CSurfacePassElement::getTexBox(", (void*)&hkGetTexBox);
     g_drawSurfaceHook       = hookByName("drawSurface", "Render::IElementRenderer::drawSurface(", (void*)&hkDrawSurface);
     g_calculateUVHook       = hookByName("calculateUVForSurface", "Render::IElementRenderer::calculateUVForSurface(", (void*)&hkCalculateUV);
@@ -424,12 +428,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     g_setPointerFocusHook   = hookByName("setPointerFocus", "CSeatManager::setPointerFocus(", (void*)&hkSetPointerFocus);
     g_sendPointerMotionHook = hookByName("sendPointerMotion", "CSeatManager::sendPointerMotion(", (void*)&hkSendPointerMotion);
 
-    // the Lua function only exists with a Lua config, the dispatcher serves hyprlang configs
-    if (Config::mgr() && Config::mgr()->type() == Config::CONFIG_LUA && !HyprlandAPI::addLuaFunction(PHANDLE, "window_rotate", "rotate", luaRotate))
+    // Hyprland 0.57 only has Lua configs, and plugin dispatchers are gone: the Lua function is the only entry point
+    if (!HyprlandAPI::addLuaFunction(PHANDLE, "window_rotate", "rotate", luaRotate))
         throw std::runtime_error("[hypr-window-rotate] failed to register hl.plugin.window_rotate.rotate");
-
-    if (!HyprlandAPI::addDispatcherV2(PHANDLE, "window_rotate", dispatchRotate))
-        throw std::runtime_error("[hypr-window-rotate] failed to register the window_rotate dispatcher");
 
     return {"hypr-window-rotate", "Rotate individual windows in 90 degree steps", "dox187", PLUGIN_VERSION};
 }
