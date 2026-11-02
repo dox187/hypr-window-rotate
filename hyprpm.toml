@@ -4,6 +4,7 @@ authors = ["dox187"]
 # [Hyprland commit, plugin commit]
 commit_pins = [
     ["efb50993780079460b0cbed1363e2166a2de1d9f", "2f7a2dd4d28bf6fcdb53c95716d92e1d40e045e5"], # Hyprland 0.56.2 -> v0.1.0
+    ["0aa6745f705f2c4b0a5004eb019ef76e5bbdb426", "bacf37c44bddcbaf62516851db8a2d1c4c0a56e3"], # Hyprland 0.57.0 -> v0.57.0+1
 ]
 
 [hypr-window-rotate]

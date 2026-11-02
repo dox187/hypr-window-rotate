@@ -28,7 +28,8 @@ configured with the swapped size, drawn rotated, and pointer input is mapped
 back, so a rotated window stays fully usable.
 
 %prep
-%autosetup
+# GitHub replaces the "+" of the tag with "-" in the archive's top directory
+%autosetup -n %{lua: print((rpm.expand("%{name}-%{version}"):gsub("%+", "-")))}
 
 %build
 %make_build VERSION=%{version} CXXFLAGS="%{optflags}" LDFLAGS="%{build_ldflags}"
