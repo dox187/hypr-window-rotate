@@ -2,6 +2,8 @@
 
 A [Hyprland](https://hypr.land) plugin that rotates individual windows in 90° steps.
 
+I made this plugin because of a small, recurring annoyance. In a video call, someone turns their camera mid-call and the app doesn't rotate the stream, so they stay sideways on my screen. Or a friend sends me a sideways photo: "look at this". I don't want to tilt my head or open the picture in an editor for a few seconds of looking, so instead I press a shortcut and turn the window for a moment.
+
 ![A terminal at 0° and the same terminal rotated by 90°](docs/demo.png)
 
 Hyprland can only rotate a whole monitor. This plugin rotates a single window:
